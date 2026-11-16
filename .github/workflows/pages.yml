@@ -1,0 +1,65 @@
+# Publishes https://bitty-buddies.github.io/
+# The website's source lives in Bitty-Buddies/bitty-buddies (site/), next to the app's real sprites.
+# This repo only builds it: every hour, or straight away with "Run workflow" in the Actions tab.
+# One-time setup: repo Settings → Pages → Source: "GitHub Actions".
+name: Website
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '17 * * * *'     # pick up website changes from the app repo and refresh the Discord member count
+    - cron: '2 0 * 12 *'     # open the next advent calendar door just after midnight (UK time in December)
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: Bitty-Buddies/bitty-buddies
+
+      - name: Assemble site
+        run: |
+          mkdir -p _site/js/packs
+          cp -r site/. _site/
+          cp src/shared/pixel.js _site/js/
+          cp src/packs/*.js _site/js/packs/
+          rm -f _site/js/packs/index.js _site/js/packs/mitty.js   # Mitty's Pack is private: never on the website
+          # Jolly Winter: only the advent doors opened so far go on the site, so nobody can peek ahead
+          rm -f _site/js/packs/winter.js _site/js/soon/winter.js
+          node scripts/advent-site.js > _site/js/advent.js
+          # bust browser caches: every deploy gets fresh script and style URLs
+          V=$(date +%s); sed -i -E "s#\?v=[0-9]+#?v=$V#g" _site/*.html
+          # old bitty-buddies.github.io/bitty-buddies/... links land on the same page at the root
+          cat > _site/404.html <<'HTML'
+          <!doctype html><html lang="en"><head><meta charset="utf-8"><title>Page not found</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <script>var p=location.pathname;if(/^\/bitty-buddies(\/|$)/i.test(p))location.replace((p.replace(/^\/bitty-buddies/i,'')||'/')+location.search+location.hash);</script>
+          <style>body{font-family:system-ui,sans-serif;background:#7EC3F0;color:#2E345C;display:grid;place-items:center;min-height:100vh;margin:0;text-align:center;padding:16px}a{color:#2E345C;font-weight:700}</style>
+          </head><body><main><h1>Page not found</h1><p><a href="/">Go to the Bitty Buddies home page</a></p></main></body></html>
+          HTML
+          cp .github/banner.png _site/banner.png
+          cp build/icon.png _site/icon.png
+          curl -fsS 'https://discord.com/api/v10/invites/aCHyjABJG7?with_counts=true' \
+            | jq '{approximate_member_count, approximate_presence_count}' > _site/discord.json || echo '{}' > _site/discord.json
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4
