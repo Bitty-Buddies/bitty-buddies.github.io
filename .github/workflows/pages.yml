@@ -49,6 +49,7 @@ jobs:
           cat > _site/404.html <<'HTML'
           <!doctype html><html lang="en"><head><meta charset="utf-8"><title>Page not found</title>
           <meta name="viewport" content="width=device-width, initial-scale=1">
+          <link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
           <script>var p=location.pathname;if(/^\/bitty-buddies(\/|$)/i.test(p))location.replace((p.replace(/^\/bitty-buddies/i,'')||'/')+location.search+location.hash);</script>
           <style>body{font-family:system-ui,sans-serif;background:#7EC3F0;color:#2E345C;display:grid;place-items:center;min-height:100vh;margin:0;text-align:center;padding:16px}a{color:#2E345C;font-weight:700}</style>
           </head><body><main><h1>Page not found</h1><p><a href="/">Go to the Bitty Buddies home page</a></p></main></body></html>
