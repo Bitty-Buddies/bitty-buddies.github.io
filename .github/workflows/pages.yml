@@ -39,7 +39,7 @@ jobs:
           cp src/shared/pixel.js _site/js/
           cp src/packs/*.js _site/js/packs/
           cp src/shop/catalogue.js _site/js/shop.js   # Bitty Shop prices for the Buddy Book
-          rm -f _site/js/packs/index.js _site/js/packs/mitty.js   # Mitty's Pack is private: never on the website
+          rm -f _site/js/packs/index.js _site/js/packs/mitty.js _site/js/packs/rider.js   # private packs (Mitty, Rider): never on the website
           # Jolly Winter: only the advent doors opened so far go on the site, so nobody can peek ahead
           rm -f _site/js/packs/winter.js _site/js/soon/winter.js
           node scripts/advent-site.js > _site/js/advent.js
