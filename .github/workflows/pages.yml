@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.first.outputs.page_url || steps.second.outputs.page_url || steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -63,5 +63,18 @@ jobs:
       - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
+      # GitHub sometimes can't see a just-uploaded site for a little while, so wait and try again before giving up
+      - id: first
+        continue-on-error: true
+        uses: actions/deploy-pages@v5
+      - if: steps.first.outcome == 'failure'
+        run: sleep 45
+      - id: second
+        if: steps.first.outcome == 'failure'
+        continue-on-error: true
+        uses: actions/deploy-pages@v5
+      - if: steps.first.outcome == 'failure' && steps.second.outcome == 'failure'
+        run: sleep 90
       - id: deployment
+        if: steps.first.outcome == 'failure' && steps.second.outcome == 'failure'
         uses: actions/deploy-pages@v5
